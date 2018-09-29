@@ -19,11 +19,11 @@ app.get('/authorize', async (req, res) => {
   await redis.del('auth-nonce');
 
   if (req.query.state !== nonce) {
-    return res.status(400).send('<html><body>Authorization failed: invalid state</body></html>');
+    return res.status(400).render('error', { error: 'Authorization failed: invalid state' });
   }
 
   if (req.query.error) {
-    return res.status(400).send(`<html><body>${req.query.error}</body></html>`);
+    return res.status(400).render('error', { error: req.query.error });
   }
 
   try {
@@ -32,7 +32,7 @@ app.get('/authorize', async (req, res) => {
     await redis.set('auth-token', access_token);
     await redis.expire('auth-token', parseInt(expires_in, 10) - 60);
   } catch (error) {
-    return res.status(400).send(`<html><body>${error.message}</body></html>`);
+    return res.status(400).render('error', { error: error.message });
   }
 
   return res.redirect(process.env.APP_URL);
@@ -51,8 +51,6 @@ app.get('/*', async (req, res) => {
   const spotifyClient = new SpotifyApiClient(authToken);
 
   const user = await spotifyClient.getUser();
-
-  console.log(user);
 
   return res.render('home', { user });
 });
