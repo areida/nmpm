@@ -8,7 +8,7 @@
 ## Setup
 1. Create a new application at https://developer.spotify.com/dashboard/applications
 1. Get the Client ID and Client Secret
-1. Add `https://localhost/authorize` to your applications Redirect URIs
+1. Add `https://localhost/authorize` to your application's Redirect URIs
 
 ## Installation
 1. Rename `example.env` to `.env`
@@ -24,4 +24,5 @@
   - `-g, --genre` Genre filter
   - `-p, --playlist` ID of playlist to add tracks to
 - `node bin/update-db` Scrapes for music release this month and adds it to the redis database
+  - `-a, --auth` Override auth token
   - `-m, --month` The month (YYYY-MM) to scrape for
