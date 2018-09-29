@@ -1,0 +1,28 @@
+{
+  "name": "nmpm",
+  "version": "1.0.0",
+  "description": "Tool for automatically generating spotify playlists from new releases on metal-archives",
+  "author": "Andrew Reida",
+  "license": "MIT",
+  "repository": "github:areida/npmn",
+  "scripts": {
+    "start": "node_modules/.bin/nodemon index.js",
+    "build-playlist": "node bin/build-playlist",
+    "update-db": "node bin/update-db"
+  },
+  "dependencies": {
+    "btoa": "^1.2.1",
+    "command-line-args": "^5.0.2",
+    "command-line-arguments": "^1.1.1",
+    "date-fns": "^1.29.0",
+    "express": "^4.16.3",
+    "express-handlebars": "^3.0.0",
+    "ioredis": "^4.0.0",
+    "nodemon": "^1.18.4",
+    "query-string": "^6.1.0",
+    "request": "^2.88.0",
+    "request-promise-native": "^1.0.5",
+    "striptags": "^3.1.1",
+    "uuid": "^3.3.2"
+  }
+}
