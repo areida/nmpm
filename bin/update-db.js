@@ -46,10 +46,10 @@ async function execute() {
   const spotifyApiClient = new SpotifyApiClient(auth, handleError);
 
   await redis.del(month);
-  const keys = await redis.keys(`${month:*}`);
+  const keys = await redis.keys(`${month}:*`);
 
   for (let i = 0; i < keys.length; ++i) {
-    await redis.del(keys[i];
+    await redis.del(keys[i]);
   }
 
   let page = 0;
