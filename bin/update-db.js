@@ -1,6 +1,9 @@
+const bandcamp = require('bandcamp-scraper');
 const commandLineArgs = require('command-line-args');
 const crypto = require('crypto');
 const { format } = require('date-fns');
+const { promisify } = require('util');
+const bandcampSearch = promisify(bandcamp.search);
 
 const MetalArchivesApiClient = require('../lib/metal-archives-api-client');
 const SpotifyApiClient = require('../lib/spotify-api-client');
@@ -74,8 +77,20 @@ async function execute() {
     );
 
     albums[i].spotifyUris = [];
+    albums[i].bandcampUrl = null;
     for (let j = 0; j < spotifyAlbums.length; ++j) {
       albums[i].spotifyUris.push(spotifyAlbums[j].id);
+    }
+
+    let bandcampResults = await bandcampSearch({ query: albums[i].album });
+    bandcampResults = bandcampResults.filter(
+      ({ artist, name, type }) => type === 'album' &&
+      artist.toLowerCase() === albums[i].artist.toLowerCase() &&
+      name.toLowerCase() === albums[i].album.toLowerCase()
+    );
+
+    if (bandcampResults.length) {
+      albums[i].bandcampUrl = bandcampResults[0].url;
     }
 
     await redis.hmset(key, albums[i]);

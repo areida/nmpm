@@ -1,5 +1,8 @@
+const bandcamp = require('bandcamp-scraper');
 const commandLineArgs = require('command-line-args');
 const { format } = require('date-fns');
+const { promisify } = require('util');
+const bandcampSearch = promisify(bandcamp.search);
 
 const MetalArchivesApiClient = require('../lib/metal-archives-api-client');
 const SpotifyApiClient = require('../lib/spotify-api-client');
@@ -85,17 +88,39 @@ async function execute() {
   // Look up albums on spotify and add to playlist if found
   for (let i = 0; i < albums.length; ++i) {
     console.log(`Searching for ${albums[i].artist} - ${albums[i].album}`);
-    const hits = await spotifyClient.search(
+    let hits = await spotifyClient.search(
       `artist:${albums[i].artist.toLowerCase()} album:${albums[i].album.toLowerCase()}`,
       'album'
     );
 
-    console.log(
-      `Found ${hits.length} album${hits.length !== 1 ? 's' : ''}, ${hits.length ? 'adding to playlist' : 'moving on'}`
-    );
+    if (hits.length) {
+      console.log(
+        `Found ${hits.length} matching album${hits.length !== 1 ? 's' : ''} on spotify, adding to playlist`
+      );
+    } else {
+      console.log('Found 0 matching albums on spotify, moving on');
+    }
+
     for (let j = 0; j < hits.length; ++j) {
       await spotifyClient.addAlbumToPlaylist(hits[j].id, playlist);
     }
+
+    hits = await bandcampSearch({ query: albums[i].album });
+    hits = hits.filter(
+      ({ artist, name, type }) => type === 'album' &&
+      artist.toLowerCase() === albums[i].artist.toLowerCase() &&
+      name.toLowerCase() === albums[i].album.toLowerCase()
+    );
+
+    if (hits.length) {
+      console.log(`Found ${hits.length} matching album${hits.length !== 1 ? 's' : ''} on bandcamp:`);
+      for (let i = 0; i< hits.length; ++i) {
+        console.log(`\t${hits[i].url}`);
+      }
+    } else {
+      console.log('Found 0 matching albums on bandcamp, moving on');
+    }
+    console.log('\n');
   }
 
   process.exit(0);
