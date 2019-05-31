@@ -1,5 +1,6 @@
 const bandcamp = require('bandcamp-scraper');
 const commandLineArgs = require('command-line-args');
+const logSymbols = require('log-symbols');
 const { format } = require('date-fns');
 const { promisify } = require('util');
 const bandcampSearch = promisify(bandcamp.search);
@@ -23,6 +24,12 @@ const options = commandLineArgs([
     defaultValue: [format(new Date(), 'YYYY-MM-DD')],
   },
   {
+    name: 'ignore',
+    alias: 'i',
+    type: String,
+    multiple: true,
+  },
+  {
     name: 'genre',
     alias: 'g',
     type: String,
@@ -38,14 +45,14 @@ console.log(options);
 
 function handleError(message, error) {
   console.error('Error: %s', message);
+  console.log(error);
   if (error) {
     console.error(error.response ? error.response.body : error);
   }
-  process.exit(1);
 }
 
 async function execute() {
-  let { auth, dates, genre, playlist } = options;
+  let { auth, dates, genre, ignore, playlist } = options;
 
   if (!auth) {
     auth = await redis.get('auth-token');
@@ -70,10 +77,11 @@ async function execute() {
     const newPlaylist = await spotifyClient.createPlaylist(user.id, name.join(' '));
 
     playlist = newPlaylist.id;
+
+    console.log(`Created new spotify playlist: ${newPlaylist.external_urls.spotify}`);
   }
 
   let page = 0;
-  let processed = 0;
 
   // Fetch all the albums for the month
   let { albums, total } = await metalArchivesClient.fetchAlbums(dates[0], genre, page);
@@ -85,43 +93,62 @@ async function execute() {
   // Filter albums for the desired dates
   albums = albums.filter(({ date }) => dates.indexOf(date) !== -1);
 
+  // Download list of all tracks in playlist
+  const tracks = await spotifyClient.getPlaylistTracks(playlist);
+
+  let spotifyTotal = 0;
+  let bandcampTotal = 0;
+
   // Look up albums on spotify and add to playlist if found
   for (let i = 0; i < albums.length; ++i) {
-    console.log(`Searching for ${albums[i].artist} - ${albums[i].album}`);
-    let hits = await spotifyClient.search(
-      `artist:${albums[i].artist.toLowerCase()} album:${albums[i].album.toLowerCase()}`,
-      'album'
-    );
+    const { album, artist, artistUrl } = albums[i];
 
-    if (hits.length) {
-      console.log(
-        `Found ${hits.length} matching album${hits.length !== 1 ? 's' : ''} on spotify, adding to playlist`
+    if (ignore && ignore.indexOf(artist) !== -1) continue;
+
+    try {
+      const spotifyHits = await spotifyClient.search(
+        `artist:${artist.toLowerCase()} album:${album.toLowerCase()}`,
+        'album'
       );
-    } else {
-      console.log('Found 0 matching albums on spotify, moving on');
-    }
 
-    for (let j = 0; j < hits.length; ++j) {
-      await spotifyClient.addAlbumToPlaylist(hits[j].id, playlist);
-    }
+      const symbol = spotifyHits.length ? logSymbols.success : logSymbols.error;
 
-    hits = await bandcampSearch({ query: albums[i].album });
-    hits = hits.filter(
-      ({ artist, name, type }) => type === 'album' &&
-      artist.toLowerCase() === albums[i].artist.toLowerCase() &&
-      name.toLowerCase() === albums[i].album.toLowerCase()
-    );
+      console.log(symbol, `${artist} - ${album}`);
+      console.log(`  - ${artistUrl}`);
 
-    if (hits.length) {
-      console.log(`Found ${hits.length} matching album${hits.length !== 1 ? 's' : ''} on bandcamp:`);
-      for (let i = 0; i< hits.length; ++i) {
-        console.log(`\t${hits[i].url}`);
+      spotifyTotal += spotifyHits.length;
+
+      for (let j = 0; j < spotifyHits.length; ++j) {
+        await spotifyClient.addAlbumToPlaylist(spotifyHits[j].id, playlist, tracks);
       }
-    } else {
-      console.log('Found 0 matching albums on bandcamp, moving on');
+    } catch (ex) {
+      handleError(ex);
     }
+
+    try {
+      let bandcampHits = await bandcampSearch({ query: album });
+
+      bandcampHits = bandcampHits.filter(
+        hit => hit.type === 'album' &&
+        hit.artist.toLowerCase() === artist.toLowerCase() &&
+        hit.name.toLowerCase() === album.toLowerCase()
+      );
+
+      bandcampHits.forEach(({ url }) => console.log(`  -- ${url}`));
+
+      bandcampTotal += bandcampHits.length;
+    } catch (ex) {
+      handleError(ex);
+    }
+
     console.log('\n');
+    await new Promise(resolve => setTimeout(resolve, 1000));
   }
+
+  console.log('\n');
+
+  console.log(`Found ${spotifyTotal} albums on spotify`);
+  console.log(`Found ${bandcampTotal} albums on bandcamp`);
 
   process.exit(0);
 }
