@@ -1,6 +1,6 @@
 {
   "name": "nmpm",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Tool for automatically generating spotify playlists from new releases on metal-archives",
   "author": "Andrew Reida",
   "license": "MIT",
