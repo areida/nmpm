@@ -1,5 +1,11 @@
 const form = document.querySelector('.playlist-form');
 
+const running = document.getElementById('running').value === 'true';
+
+if (running) {
+  setTimeout(() => document.location.reload(), 5000);
+}
+
 const postForm = data => {
   const request = new XMLHttpRequest();
   request.open('POST', '/playlist', true);
@@ -21,5 +27,5 @@ form.onsubmit = event => {
 
   postForm(data);
 
-  document.location = 'localhost?key=' + form.elements.key.value;
+  document.location = 'localhost?key=' + data.key;
 };

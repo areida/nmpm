@@ -4,11 +4,12 @@
   "description": "Tool for automatically generating spotify playlists from new releases on metal-archives",
   "author": "Andrew Reida",
   "license": "MIT",
-  "repository": "github:areida/npmn",
+  "repository": "github:areida/nmpm",
   "scripts": {
     "start": "node_modules/.bin/nodemon index.js",
     "build-playlist": "node bin/build-playlist",
-    "update-db": "node bin/update-db"
+    "update-db": "node bin/update-db",
+    "prettier": "prettier --write --single-quote --trailing-comma es5 --print-width 120 '{src,bin,lib,public}/**/*.js' index.js"
   },
   "dependencies": {
     "bandcamp-scraper": "^1.2.4",

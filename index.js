@@ -64,7 +64,7 @@ app.get('/*', async (req, res) => {
         await redis.set('refresh-token', refresh_token);
       }
 
-      return res.redirect(process.env.APP_URL);
+      return res.redirect(req.get('referer'));
     } else {
       return res.redirect(SpotifyApiClient.getAuthorizeUrl(nonce));
     }
@@ -79,16 +79,24 @@ app.get('/*', async (req, res) => {
 
   const today = moment.tz(user.country);
 
-  let log = [];
+  let log;
 
   if (key) {
-    log = await redis.lrange(key, 0, -1);
+    log = await redis.hgetall(key);
+    if (log.entries) {
+      log.entries = JSON.parse(log.entries);
+    } else {
+      log.entries = [];
+    }
   }
 
   const buildKey = await redis.get('build-key');
 
   return res.render('home', {
-    playlists: playlists.items,
+    playlists: playlists.items.map(list => {
+      list.selected = log && list.id === log.playlist;
+      return list;
+    }),
     today: today.format('YYYY-MM-DD'),
     user,
     newKey: uuid.v4(),
@@ -96,13 +104,14 @@ app.get('/*', async (req, res) => {
       moment(today)
         .endOf('month')
         .diff(today, 'days') + 1,
-    log: log.reverse(),
+    log,
     running: buildKey === key,
   });
 });
 
 app.post('/playlist', async (req, res) => {
-  const { date, days, key, playlist } = req.body;
+  const { date, days, genre, ignore, key } = req.body;
+  let { playlist } = req.body;
 
   let dates = new Array(parseInt(days, 10)).fill().map((val, index) =>
     moment(date)
@@ -110,7 +119,22 @@ app.post('/playlist', async (req, res) => {
       .format('YYYY-MM-DD')
   );
 
-  playlistService.execute({ dates, key, playlist });
+  if (playlist) {
+    playlist = await playlistService.getPlaylist(playlist);
+  } else {
+    playlist = await playlistService.createPlaylist(dates, genre);
+  }
+
+  await redis.hmset(key, {
+    entries: [],
+    spotifyTotal: 0,
+    bandcampTotal: 0,
+    playlist: playlist.id,
+    playlistName: playlist.name,
+    playlistUrl: playlist.external_urls.spotify,
+  });
+
+  playlistService.execute({ dates, genre, ignore, key, playlist: playlist.id });
 
   return res.status(200);
 });

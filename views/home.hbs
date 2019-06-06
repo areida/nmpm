@@ -1,14 +1,21 @@
 <div class="grid-container">
-  <div class="grid-x grid-padding-x">
-    <div class="cell small-2">
-      <img class="thumbnail" src="{{user.images.[0].url}}" alt="{{user.display_name}}" />
-    </div>
-    <div class="cell small-10">
-      <h1>New Metal Playlist Maker</h1>
+  <div class="grid-x padding-x">
+    <div class="cell small-12">
+      <div class="media-object">
+        <div class="media-object-section">
+          <div class="thumbnail" >
+            <img src="{{user.images.[0].url}}" alt="{{user.display_name}}" />
+          </div>
+        </div>
+        <div class="media-object-section">
+          <h1>New Metal Playlist Maker</h1>
+        </div>
+      </div>
     </div>
   </div>
 </div>
 
+<input type="hidden" id="running" value="{{running}}" />
 <form class="playlist-form" method="POST" action="/playlist">
   <div class="grid-container">
 
@@ -16,11 +23,11 @@
       <div class="small-1 cell">
         <label class="label-right" class="text-label">Playlist</label>
       </div>
-      <div class="small-3">
-        <select name="playlist" id="playlist">
+      <div class="small-3 cell">
+        <select name="playlist" id="playlist" {{#if running}}disabled{{/if}}>
           <option value="">Create New</option>
           {{#each playlists}}
-            <option value="{{id}}">{{name}}</option>
+            <option value="{{id}}" {{#if selected}}selected{{/if}}>{{name}}</option>
           {{/each}}
         </select>
       </div>
@@ -30,8 +37,8 @@
       <div class="small-1 cell">
         <label class="label-right" class="text-label">Start Date</label>
       </div>
-      <div class="small-3">
-        <input type="date" name="date" id="date" value="{{today}}" />
+      <div class="small-3 cell">
+        <input type="date" name="date" id="date" value="{{today}}" {{#if running}}disabled{{/if}} />
       </div>
     </div>
 
@@ -39,24 +46,101 @@
       <div class="small-1 cell">
         <label class="label-right" class="text-label">Days</label>
       </div>
-      <div class="small-3">
-        <input type="number" name="days" id="days" value="1" min="1" max="{{maxDays}}" />
+      <div class="small-3 cell">
+        <input
+          type="number"
+          name="days"
+          id="days"
+          value="1"
+          min="1"
+          max="{{maxDays}}"
+          {{#if running}}disabled{{/if}}
+        />
+      </div>
+    </div>
+
+    <div class="grid-x grid-padding-x text-right">
+      <div class="small-4 cell">
+        <button
+          class="success button"
+          type="submit"
+          name="key"
+          value="{{newKey}}"
+          {{#if running}}disabled{{/if}}
+        >
+          Build
+        </button>
+      </div>
+    </div>
+
+  </div>
+</form>
+
+<div class="grid-container">
+  {{#if log}}
+    <div class="grid-x grid-padding-x">
+      <div class="cell small-12">
+        <h3><a href="{{log.playlistUrl}}">{{log.playlistName}}</a></h3>
       </div>
     </div>
 
     <div class="grid-x grid-padding-x">
-      <div class="small-2 small-offset-3 cell">
-        <button class="success button" type="submit" name="key" value="{{newKey}}">Build</button>
+      <div class="cell small-2">
+        <span class="label {{#if log.spotifyTotal}}success{{else}}alert{{/if}}">Spotify {{log.spotifyTotal}}</span>
+        <span class="label {{#if log.bandcampTotal}}primary{{else}}alert{{/if}}">Bandcamp {{log.bandcampTotal}}</span>
       </div>
     </div>
 
-    {{#each log}}
-      <div class="grid-x grid-padding-x">
-        <div class="small-12">
-            {{{this}}}
-        </div>
-      </div>
-    {{/each}}
+    <br />
 
-  </div>
-</form>
+    {{#each log.entries}}
+      <div class="callout secondary" data-closable>
+        <div class="grid-x grid-padding-x">
+          <div class="cell small-12">
+            <h4><a href="{{artistUrl}}">{{artist}}</a> - <a href="{{albumUrl}}">{{album}}</a></h4>
+          </div>
+        </div>
+
+        {{#if spotify}}
+          <div class="grid-x grid-padding-x">
+            <div class="cell small-12">
+              <dl>
+                <dt>Spotify</dt>
+                <dd>
+                  {{#each spotifyHits}}
+                    <a href="{{external_urls.spotify}}" class="thumbnail">
+                      <img src="{{images.1.url}}" alt="{{artists.0.name}} - {{name}}" />
+                    </a>
+                  {{/each}}
+                </dd>
+              </dl>
+            </div>
+          </div>
+        {{/if}}
+
+        {{#if bandcamp}}
+          <div class="grid-x grid-padding-x">
+            <div class="cell small-12">
+              <dl>
+                <dt>Bandcamp</dt>
+                <dd>
+                  {{#each bandcampHits}}
+                    <a href="{{url}}" class="thumbnail">
+                      <img src="{{imageUrl}}" alt="{{artist}} - {{name}}" />
+                    </a>
+                  {{/each}}
+                </dd>
+              </dl>
+            </div>
+          </div>
+        {{/if}}
+
+        <button class="close-button" aria-label="Close" type="button" data-close>
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+
+      <br />
+    {{/each}}
+  {{/if}}
+</div>

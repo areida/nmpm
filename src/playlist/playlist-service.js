@@ -7,42 +7,39 @@ const SpotifyApiClient = require('../../lib/spotify-api-client');
 const redis = require('../../lib/redis');
 
 module.exports = {
+  async createPlaylist(dates, genre) {
+    const name = ['Metal'];
+
+    const auth = await redis.get('auth-token');
+    const spotifyClient = new SpotifyApiClient(auth);
+
+    if (genre) {
+      name.push(genre);
+    }
+
+    name.push(dates[0]);
+
+    const user = await spotifyClient.getUser();
+
+    return await spotifyClient.createPlaylist(user.id, name.join(' - '));
+  },
+
+  async getPlaylist(playlist) {
+    const auth = await redis.get('auth-token');
+    const spotifyClient = new SpotifyApiClient(auth);
+
+    return spotifyClient.getPlaylist(playlist);
+  },
+
   async execute(options) {
-    console.log(options);
-    let { auth, dates, genre, ignore, key, playlist } = options;
+    const { dates, genre, ignore, key, playlist } = options;
 
-    if (!auth) {
-      auth = await redis.get('auth-token');
-    }
-
-    if (!auth) {
-      return module.exports.handleError('Missing auth token');
-    }
+    const auth = await redis.get('auth-token');
 
     await redis.set('build-key', key);
 
-    const spotifyClient = new SpotifyApiClient(auth, module.exports.handleError);
-    const metalArchivesClient = new MetalArchivesApiClient(module.exports.handleError);
-
-    // Create a new playlist if one is not provided
-    if (!playlist) {
-      const name = ['Metal'];
-      if (options.genre) {
-        name.push(`- ${genre}`);
-      }
-      name.push(`- ${dates[0]}`);
-
-      const user = await spotifyClient.getUser();
-      const newPlaylist = await spotifyClient.createPlaylist(user.id, name.join(' '));
-
-      playlist = newPlaylist.id;
-
-      await redis.lpush(
-        key,
-        `Created new Spotify playlist: <a href="${newPlaylist.external_urls.spotify}">${name.join(' ')}`
-      );
-      await redis.lpush(key, '<br />');
-    }
+    const spotifyClient = new SpotifyApiClient(auth);
+    const metalArchivesClient = new MetalArchivesApiClient();
 
     let page = 0;
 
@@ -61,6 +58,7 @@ module.exports = {
 
     let spotifyTotal = 0;
     let bandcampTotal = 0;
+    const entries = [];
 
     // Look up albums on spotify and add to playlist if found
     for (let i = 0; i < albums.length; ++i) {
@@ -68,19 +66,20 @@ module.exports = {
 
       if (ignore && ignore.indexOf(artist) !== -1) continue;
 
+      let entry = {};
+
       try {
         const spotifyHits = await spotifyClient.search(
           `artist:${artist.toLowerCase()} album:${album.toLowerCase()}`,
           'album'
         );
 
-        await redis.lpush(key, `<a href="${artistUrl}">${artist}</a> - <a href="${albumUrl}">${album}</a>`);
-
-        if (spotifyHits.length) {
-          await redis.lpush(key, `Found on Spotify`);
-        } else {
-          await redis.lpush(key, 'Not found on Spotify');
-        }
+        entry.album = album;
+        entry.albumUrl = albumUrl;
+        entry.artist = artist;
+        entry.artistUrl = artistUrl;
+        entry.spotify = Boolean(spotifyHits.length);
+        entry.spotifyHits = spotifyHits;
 
         spotifyTotal += spotifyHits.length;
 
@@ -89,7 +88,6 @@ module.exports = {
         }
       } catch (ex) {
         await redis.del('build-key');
-        return module.exports.handleError(ex);
       }
 
       try {
@@ -102,33 +100,23 @@ module.exports = {
             hit.name.toLowerCase() === album.toLowerCase()
         );
 
-        if (bandcampHits.length) {
-          await redis.lpush(key, `Found on Bandcamp`);
-        } else {
-          await redis.lpush(key, 'Not found on Bandcamp');
-        }
-
-        bandcampHits.forEach(async ({ url }) => {
-          await redis.lpush(key, `<a href="${url}">${url}</a>`);
-        });
+        entry.bandcamp = Boolean(bandcampHits.length);
+        entry.bandcampHits = bandcampHits;
 
         bandcampTotal += bandcampHits.length;
       } catch (ex) {
         await redis.del('build-key');
-        return module.exports.handleError(ex);
       }
 
-      await redis.lpush(key, '<br />');
+      entries.push(entry);
+
+      await redis.hset(key, 'entries', JSON.stringify(entries));
+      await redis.hset(key, 'spotifyTotal', spotifyTotal);
+      await redis.hset(key, 'bandcampTotal', bandcampTotal);
+
       await new Promise(resolve => setTimeout(resolve, 1000));
     }
 
-    await redis.lpush(key, `Found ${spotifyTotal} albums on Spotify`);
-    await redis.lpush(key, `Found ${bandcampTotal} albums on Bandcamp`);
-
     await redis.del('build-key');
-  },
-
-  async handleError(message) {
-    await redis.lpush(key, `Error: ${message}`);
   },
 };
