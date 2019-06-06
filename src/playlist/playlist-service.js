@@ -37,7 +37,10 @@ module.exports = {
 
       playlist = newPlaylist.id;
 
-      await redis.lpush(key, `Created new Spotify playlist: <a href="${newPlaylist.external_urls.spotify}">${name.join(' ')}`);
+      await redis.lpush(
+        key,
+        `Created new Spotify playlist: <a href="${newPlaylist.external_urls.spotify}">${name.join(' ')}`
+      );
       await redis.lpush(key, '<br />');
     }
 
@@ -93,9 +96,10 @@ module.exports = {
         let bandcampHits = await bandcampSearch({ query: album });
 
         bandcampHits = bandcampHits.filter(
-          hit => hit.type === 'album' &&
-          hit.artist.toLowerCase() === artist.toLowerCase() &&
-          hit.name.toLowerCase() === album.toLowerCase()
+          hit =>
+            hit.type === 'album' &&
+            hit.artist.toLowerCase() === artist.toLowerCase() &&
+            hit.name.toLowerCase() === album.toLowerCase()
         );
 
         if (bandcampHits.length) {

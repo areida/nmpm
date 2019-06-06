@@ -129,9 +129,10 @@ async function execute() {
       let bandcampHits = await bandcampSearch({ query: album });
 
       bandcampHits = bandcampHits.filter(
-        hit => hit.type === 'album' &&
-        hit.artist.toLowerCase() === artist.toLowerCase() &&
-        hit.name.toLowerCase() === album.toLowerCase()
+        hit =>
+          hit.type === 'album' &&
+          hit.artist.toLowerCase() === artist.toLowerCase() &&
+          hit.name.toLowerCase() === album.toLowerCase()
       );
 
       bandcampHits.forEach(({ url }) => console.log(`  -- ${url}`));

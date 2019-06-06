@@ -10,10 +10,14 @@ const postForm = data => {
 form.onsubmit = event => {
   event.preventDefault();
 
-  const data = [].reduce.call(form.elements, (data, element) => {
-    data[element.name] = element.value;
-    return data;
-  }, {});
+  const data = [].reduce.call(
+    form.elements,
+    (data, element) => {
+      data[element.name] = element.value;
+      return data;
+    },
+    {}
+  );
 
   postForm(data);
 

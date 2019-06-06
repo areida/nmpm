@@ -32,7 +32,12 @@ const handleError = (message, error) => {
   process.exit(1);
 };
 
-const slugify = input => input.trim().toLowerCase().replace(/[^a-zA-Z\d\s]/g, '').replace(/\s/g, '-');
+const slugify = input =>
+  input
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-zA-Z\d\s]/g, '')
+    .replace(/\s/g, '-');
 
 async function execute() {
   let { auth, month } = options;
@@ -67,7 +72,7 @@ async function execute() {
     const exists = await redis.exists(key);
 
     if (exists) {
-      key = `${key}:${crypto.randomBytes(3).toString('hex')}`
+      key = `${key}:${crypto.randomBytes(3).toString('hex')}`;
     }
     console.log(i + 1, key);
 
@@ -84,9 +89,10 @@ async function execute() {
 
     let bandcampResults = await bandcampSearch({ query: albums[i].album });
     bandcampResults = bandcampResults.filter(
-      ({ artist, name, type }) => type === 'album' &&
-      artist.toLowerCase() === albums[i].artist.toLowerCase() &&
-      name.toLowerCase() === albums[i].album.toLowerCase()
+      ({ artist, name, type }) =>
+        type === 'album' &&
+        artist.toLowerCase() === albums[i].artist.toLowerCase() &&
+        name.toLowerCase() === albums[i].album.toLowerCase()
     );
 
     if (bandcampResults.length) {

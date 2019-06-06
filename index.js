@@ -92,7 +92,10 @@ app.get('/*', async (req, res) => {
     today: today.format('YYYY-MM-DD'),
     user,
     newKey: uuid.v4(),
-    maxDays: moment(today).endOf('month').diff(today, 'days') + 1,
+    maxDays:
+      moment(today)
+        .endOf('month')
+        .diff(today, 'days') + 1,
     log: log.reverse(),
     running: buildKey === key,
   });
@@ -101,9 +104,11 @@ app.get('/*', async (req, res) => {
 app.post('/playlist', async (req, res) => {
   const { date, days, key, playlist } = req.body;
 
-  let dates = new Array(parseInt(days, 10))
-    .fill()
-    .map((val, index) => moment(date).add(index, 'days').format('YYYY-MM-DD'));
+  let dates = new Array(parseInt(days, 10)).fill().map((val, index) =>
+    moment(date)
+      .add(index, 'days')
+      .format('YYYY-MM-DD')
+  );
 
   playlistService.execute({ dates, key, playlist });
 
