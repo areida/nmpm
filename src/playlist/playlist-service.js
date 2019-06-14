@@ -7,10 +7,9 @@ const SpotifyApiClient = require('../../lib/spotify-api-client');
 const redis = require('../../lib/redis');
 
 module.exports = {
-  async createPlaylist(dates, genre) {
+  async createPlaylist(dates, genre, auth) {
     const name = ['Metal'];
 
-    const auth = await redis.get('auth-token');
     const spotifyClient = new SpotifyApiClient(auth);
 
     if (genre) {
@@ -24,19 +23,16 @@ module.exports = {
     return await spotifyClient.createPlaylist(user.id, name.join(' - '));
   },
 
-  async getPlaylist(playlist) {
-    const auth = await redis.get('auth-token');
+  async getPlaylist(playlist, auth) {
     const spotifyClient = new SpotifyApiClient(auth);
 
     return spotifyClient.getPlaylist(playlist);
   },
 
   async execute(options) {
-    const { dates, genre, ignore, key, playlist } = options;
+    const { auth, dates, fingerprint, genre, ignore, key, playlist } = options;
 
-    const auth = await redis.get('auth-token');
-
-    await redis.set('build-key', key);
+    await redis.set(`build-key:${fingerprint}`, key);
 
     const spotifyClient = new SpotifyApiClient(auth);
     const metalArchivesClient = new MetalArchivesApiClient();
@@ -54,7 +50,7 @@ module.exports = {
     albums = albums.filter(({ date }) => dates.indexOf(date) !== -1);
 
     // Download list of all tracks in playlist
-    const tracks = await spotifyClient.getPlaylistTracks(playlist);
+    const playlistTracks = await spotifyClient.getPlaylistTracks(playlist);
 
     let spotifyTotal = 0;
     let bandcampTotal = 0;
@@ -66,57 +62,62 @@ module.exports = {
 
       if (ignore && ignore.indexOf(artist) !== -1) continue;
 
-      let entry = {};
+      let entry = {
+        album: album,
+        albumUrl: albumUrl,
+        artist: artist,
+        artistUrl: artistUrl,
+      };
 
-      try {
-        const spotifyHits = await spotifyClient.search(
-          `artist:${artist.toLowerCase()} album:${album.toLowerCase()}`,
-          'album'
-        );
+      const spotifyHits = await spotifyClient.search(
+        `artist:${artist.toLowerCase()} album:${album.toLowerCase()}`,
+        'album'
+      );
 
-        entry.album = album;
-        entry.albumUrl = albumUrl;
-        entry.artist = artist;
-        entry.artistUrl = artistUrl;
-        entry.spotify = Boolean(spotifyHits.length);
-        entry.spotifyHits = spotifyHits;
+      entry.spotify = Boolean(spotifyHits.length);
 
-        spotifyTotal += spotifyHits.length;
+      spotifyTotal += spotifyHits.length;
 
-        for (let j = 0; j < spotifyHits.length; ++j) {
-          await spotifyClient.addAlbumToPlaylist(spotifyHits[j].id, playlist, tracks);
-        }
-      } catch (ex) {
-        await redis.del('build-key');
+      for (let j = 0; j < spotifyHits.length; ++j) {
+        const tracks = await spotifyClient.getTracks(spotifyHits[j].id);
+        const uris = [];
+
+        tracks.forEach(({ id, uri }) => {
+          if (playlistTracks.indexOf(id) === -1) {
+            uris.push(uri);
+          }
+        });
+
+        spotifyHits[j].tracks = tracks;
+
+        await spotifyClient.addTracksToPlaylist(uris, playlist);
       }
 
-      try {
-        let bandcampHits = await bandcampSearch({ query: album });
+      entry.spotifyHits = spotifyHits;
 
-        bandcampHits = bandcampHits.filter(
-          hit =>
-            hit.type === 'album' &&
-            hit.artist.toLowerCase() === artist.toLowerCase() &&
-            hit.name.toLowerCase() === album.toLowerCase()
-        );
+      let bandcampHits = await bandcampSearch({ query: album });
 
-        entry.bandcamp = Boolean(bandcampHits.length);
-        entry.bandcampHits = bandcampHits;
+      bandcampHits = bandcampHits.filter(
+        hit =>
+          hit.type === 'album' &&
+          hit.artist.toLowerCase() === artist.toLowerCase() &&
+          hit.name.toLowerCase() === album.toLowerCase()
+      );
 
-        bandcampTotal += bandcampHits.length;
-      } catch (ex) {
-        await redis.del('build-key');
-      }
+      entry.bandcamp = Boolean(bandcampHits.length);
+      entry.bandcampHits = bandcampHits;
+
+      bandcampTotal += bandcampHits.length;
 
       entries.push(entry);
 
-      await redis.hset(key, 'entries', JSON.stringify(entries));
-      await redis.hset(key, 'spotifyTotal', spotifyTotal);
-      await redis.hset(key, 'bandcampTotal', bandcampTotal);
+      await redis.hset(`build:${fingerprint}:${key}`, 'entries', JSON.stringify(entries));
+      await redis.hset(`build:${fingerprint}:${key}`, 'spotifyTotal', spotifyTotal);
+      await redis.hset(`build:${fingerprint}:${key}`, 'bandcampTotal', bandcampTotal);
 
       await new Promise(resolve => setTimeout(resolve, 1000));
     }
 
-    await redis.del('build-key');
+    await redis.del(`build-key:${fingerprint}`);
   },
 };

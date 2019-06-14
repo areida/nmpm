@@ -94,7 +94,7 @@ async function execute() {
   albums = albums.filter(({ date }) => dates.indexOf(date) !== -1);
 
   // Download list of all tracks in playlist
-  const tracks = await spotifyClient.getPlaylistTracks(playlist);
+  const playlistTracks = await spotifyClient.getPlaylistTracks(playlist);
 
   let spotifyTotal = 0;
   let bandcampTotal = 0;
@@ -119,7 +119,16 @@ async function execute() {
       spotifyTotal += spotifyHits.length;
 
       for (let j = 0; j < spotifyHits.length; ++j) {
-        await spotifyClient.addAlbumToPlaylist(spotifyHits[j].id, playlist, tracks);
+        const tracks = await spotifyClient.getTracks(spotifyHits[j].id);
+        const uris = [];
+
+        tracks.forEach(({ id, uri }) => {
+          if (playlistTracks.indexOf(id) === -1) {
+            uris.push(uri);
+          }
+        });
+
+        await spotifyClient.addTracksToPlaylist(uris, playlist);
       }
     } catch (ex) {
       handleError(ex);

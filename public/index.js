@@ -20,6 +20,9 @@ form.onsubmit = event => {
     form.elements,
     (data, element) => {
       data[element.name] = element.value;
+      if (element.name === 'ignore') {
+        data[element.name] = data[element.name].replace(/, /, ',');
+      }
       return data;
     },
     {}
@@ -27,5 +30,5 @@ form.onsubmit = event => {
 
   postForm(data);
 
-  document.location = 'localhost?key=' + data.key;
+  document.location = 'http://localhost/' + data.key;
 };
