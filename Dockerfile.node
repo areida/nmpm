@@ -1,13 +1,13 @@
-FROM node:10.11
+FROM node:12.4
 
-ARG PACKAGE_PATH=
+ARG PACKAGE_PATH=.
 ARG WORKING_DIR=/src
 
 WORKDIR $WORKING_DIR
-# COPY $PACKAGE_PATH/package.json $WORKING_DIR/package.json
-# COPY $PACKAGE_PATH/package-lock.json $WORKING_DIR/package-lock.json
-# RUN npm install
+COPY $PACKAGE_PATH/package.json $WORKING_DIR/package.json
+COPY $PACKAGE_PATH/package-lock.json $WORKING_DIR/package-lock.json
+RUN npm install
 
 COPY $PACKAGE_PATH $WORKING_DIR
 
-# VOLUME $WORKING_DIR/node_modules
+VOLUME $WORKING_DIR/node_modules

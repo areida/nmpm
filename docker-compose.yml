@@ -5,7 +5,7 @@ services:
       context: .
       dockerfile: Dockerfile.node
       args:
-        PACKAGE_PATH: ./
+        PACKAGE_PATH: .
         WORKING_DIR: /src
     ports:
       - "80:9000"
