@@ -12,7 +12,7 @@ module.exports = {
 
     const spotifyClient = new SpotifyApiClient(auth);
 
-    if (genre) {
+    if (genre && genre !== '*') {
       name.push(genre);
     }
 
@@ -40,9 +40,9 @@ module.exports = {
     let page = 0;
 
     // Fetch all the albums for the month
-    let { albums, total } = await metalArchivesClient.fetchAlbums(dates[0], genre, page);
+    let { albums, total } = await metalArchivesClient.fetchAlbums(dates[0], genre || '*', page);
     while (albums.length < total) {
-      const response = await metalArchivesClient.fetchAlbums(dates[0], genre, ++page);
+      const response = await metalArchivesClient.fetchAlbums(dates[0], genre || '*', ++page);
       albums.push(...response.albums);
     }
 
