@@ -55,6 +55,8 @@ module.exports = {
     let spotifyTotal = 0;
     let bandcampTotal = 0;
     const entries = [];
+    const spotifyEntries = [];
+    const bandcampEntries = [];
 
     // Look up albums on spotify and add to playlist if found
     for (let i = 0; i < albums.length; ++i) {
@@ -67,6 +69,11 @@ module.exports = {
         albumUrl: albumUrl,
         artist: artist,
         artistUrl: artistUrl,
+        bandcamp: false,
+        bandcampHits: [],
+        genre: albums[i].genre,
+        spotify: false,
+        spotifyHits: [],
       };
 
       const spotifyHits = await spotifyClient.search(
@@ -95,6 +102,10 @@ module.exports = {
 
       entry.spotifyHits = spotifyHits;
 
+      if (entry.spotify) {
+        spotifyEntries.push(entry);
+      }
+
       let bandcampHits = await bandcampSearch({ query: album });
 
       bandcampHits = bandcampHits.filter(
@@ -109,10 +120,16 @@ module.exports = {
 
       bandcampTotal += bandcampHits.length;
 
+      if (entry.bandcamp) {
+        bandcampEntries.push(entry);
+      }
+
       entries.push(entry);
 
       await redis.hset(`build:${fingerprint}:${key}`, 'entries', JSON.stringify(entries));
+      await redis.hset(`build:${fingerprint}:${key}`, 'spotifyEntries', JSON.stringify(spotifyEntries));
       await redis.hset(`build:${fingerprint}:${key}`, 'spotifyTotal', spotifyTotal);
+      await redis.hset(`build:${fingerprint}:${key}`, 'bandcampEntries', JSON.stringify(bandcampEntries));
       await redis.hset(`build:${fingerprint}:${key}`, 'bandcampTotal', bandcampTotal);
 
       await new Promise(resolve => setTimeout(resolve, 1000));

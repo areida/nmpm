@@ -99,11 +99,10 @@ app.get('/:key?', async (req, res) => {
 
   if (key) {
     log = await redis.hgetall(`build:${fingerprint}:${key}`);
-    if (log.entries) {
-      log.entries = JSON.parse(log.entries);
-    } else {
-      log.entries = [];
-    }
+
+    log.bandcampEntries = JSON.parse(log.bandcampEntries || '[]');
+    log.entries = JSON.parse(log.entries || '[]');
+    log.spotifyEntries = JSON.parse(log.spotifyEntries || '[]');
   }
 
   const buildKey = await redis.get(`build-key:${fingerprint}`);
@@ -116,13 +115,10 @@ app.get('/:key?', async (req, res) => {
     days: log.days || 1,
     date: log.date,
     fingerprint,
-    genre: log.genre || '',
+    genre: log.genre || '*',
     ignore: log.ignore || '',
     log,
-    maxDays:
-      moment(today)
-        .endOf('month')
-        .diff(today, 'days') + 1,
+    maxDays: 10,
     newKey: uuid.v4(),
     playlists,
     running: buildKey === key,
@@ -156,6 +152,7 @@ app.post('/playlist', async (req, res) => {
   }
 
   await redis.hmset(`build:${fingerprint}:${key}`, {
+    bandcampEntries: [],
     bandcampTotal: 0,
     entries: [],
     date: dates[0],
@@ -165,6 +162,7 @@ app.post('/playlist', async (req, res) => {
     playlist: playlist.id,
     playlistName: playlist.name,
     playlistUrl: playlist.external_urls.spotify,
+    spotifyEntries: [],
     spotifyTotal: 0,
   });
 
@@ -178,7 +176,7 @@ app.post('/playlist', async (req, res) => {
     playlist: playlist.id,
   });
 
-  return res.status(200);
+  return res.sendStatus(200);
 });
 
 app.listen(PORT, () => {

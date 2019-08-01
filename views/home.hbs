@@ -140,79 +140,229 @@
     </div>
 
     <br />
+
+    <ul class="tabs" data-tabs id="tabs">
+      <li class="tabs-title is-active"><a href="#all" aria-selected="true">All</a></li>
+      <li class="tabs-title"><a href="#spotify">Spotify</a></li>
+      <li class="tabs-title"><a href="#bandcamp">Bandcamp</a></li>
+    </ul>
   {{/unless}}
 
-  {{#each log.entries}}
-    <div class="grid-x grid-padding-x">
+  {{#unless log.empty}}
+    <div class="tabs-content" data-tabs-content="tabs">
+      <div class="tabs-panel is-active" id="all">
+        {{#each log.entries}}
+          <div class="grid-x grid-padding-x">
 
-      <div class="cell small-12">
-        <div class="callout secondary" data-closable>
-          <div class="grid-x grid-padding-x">
-            <div class="cell small-11">
-              <h4><a href="{{artistUrl}}">{{artist}}</a></h4>
-            </div>
-          </div>
-          <div class="grid-x grid-padding-x">
             <div class="cell small-12">
-              <h5><a href="{{albumUrl}}">{{album}}</a></h5>
+              <div class="callout secondary" data-closable>
+                <div class="grid-x grid-padding-x">
+                  <div class="cell small-11">
+                    <h4><a href="{{artistUrl}}">{{artist}}</a></h4>
+                  </div>
+                </div>
+                <div class="grid-x grid-padding-x">
+                  <div class="cell small-11">
+                    <h5>{{genre}}</h5>
+                  </div>
+                </div>
+                <div class="grid-x grid-padding-x">
+                  <div class="cell small-12">
+                    <h5><a href="{{albumUrl}}">{{album}}</a></h5>
+                  </div>
+                </div>
+
+                {{#if spotify}}
+                  <div class="grid-x grid-padding-x">
+                    <div class="cell small-12">
+                      <h6>Spotify</h6>
+                    </div>
+                  </div>
+                  {{#each spotifyHits}}
+                    <div class="grid-x grid-padding-x">
+                      <div class="cell small-4">
+                        <a href="{{external_urls.spotify}}" class="thumbnail">
+                          <img src="{{images.1.url}}" alt="{{artists.0.name}} - {{name}}" />
+                        </a>
+                      </div>
+                      <div class="cell small-8">
+                        <table class="hover">
+                          <tbody>
+                            {{#each tracks}}
+                              <tr>
+                                <td>{{track_number}}</td>
+                                <td>{{name}}</td>
+                                <td>{{duration duration_ms}}</td>
+                              </tr>
+                            {{/each}}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+
+                    <div class="grid-x grid-padding-x">
+                      <div class="cell small-12">
+                        <button
+                          class="success button remove-from-playlist"
+                          data-id="{{id}}"
+                          {{#if ../../running}}disabled{{/if}}
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    </div>
+                  {{/each}}
+                {{/if}}
+
+                {{#if bandcamp}}
+                  <div class="grid-x grid-padding-x">
+                    <div class="cell small-12">
+                      <h6>Bandcamp</h6>
+                    </div>
+                  </div>
+                  <div class="grid-x grid-padding-x">
+                    {{#each bandcampHits}}
+                      <div class="cell small-2">
+                        <a href="{{url}}" class="thumbnail">
+                          <img src="{{imageUrl}}" alt="{{artist}} - {{name}}" />
+                        </a>
+                      </div>
+                    {{/each}}
+                  </div>
+                {{/if}}
+
+                <button class="close-button" aria-label="Close" type="button" data-close>
+                  <span aria-hidden="true">&or;</span>
+                </button>
+              </div>
             </div>
+
           </div>
 
-          {{#if spotify}}
-            <div class="grid-x grid-padding-x">
-              <div class="cell small-12">
-                <h6>Spotify</h6>
-              </div>
-            </div>
-            {{#each spotifyHits}}
-              <div class="grid-x grid-padding-x">
-                <div class="cell small-4">
-                  <a href="{{external_urls.spotify}}" class="thumbnail">
-                    <img src="{{images.1.url}}" alt="{{artists.0.name}} - {{name}}" />
-                  </a>
-                </div>
-                <div class="cell small-8">
-                  <table class="hover">
-                    <tbody>
-                      {{#each tracks}}
-                        <tr>
-                          <td>{{track_number}}</td>
-                          <td>{{name}}</td>
-                          <td>{{duration duration_ms}}</td>
-                        </tr>
-                      {{/each}}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            {{/each}}
-          {{/if}}
-
-          {{#if bandcamp}}
-            <div class="grid-x grid-padding-x">
-              <div class="cell small-12">
-                <h6>Bandcamp</h6>
-              </div>
-            </div>
-            <div class="grid-x grid-padding-x">
-              {{#each bandcampHits}}
-                <div class="cell small-2">
-                  <a href="{{url}}" class="thumbnail">
-                    <img src="{{imageUrl}}" alt="{{artist}} - {{name}}" />
-                  </a>
-                </div>
-              {{/each}}
-            </div>
-          {{/if}}
-
-          <button class="close-button" aria-label="Close" type="button" data-close>
-            <span aria-hidden="true">&times;</span>
-          </button>
-        </div>
+          <br />
+        {{/each}}
       </div>
+      <div class="tabs-panel" id="spotify">
+        {{#each log.spotifyEntries}}
+          <div class="grid-x grid-padding-x">
 
+            <div class="cell small-12">
+              <div class="callout secondary" data-closable>
+                <div class="grid-x grid-padding-x">
+                  <div class="cell small-11">
+                    <h4><a href="{{artistUrl}}">{{artist}}</a></h4>
+                  </div>
+                </div>
+                <div class="grid-x grid-padding-x">
+                  <div class="cell small-11">
+                    <h5>{{genre}}</h5>
+                  </div>
+                </div>
+                <div class="grid-x grid-padding-x">
+                  <div class="cell small-12">
+                    <h5><a href="{{albumUrl}}">{{album}}</a></h5>
+                  </div>
+                </div>
+
+                <div class="grid-x grid-padding-x">
+                  <div class="cell small-12">
+                    <h6>Spotify</h6>
+                  </div>
+                </div>
+                {{#each spotifyHits}}
+                  <div class="grid-x grid-padding-x">
+                    <div class="cell small-4">
+                      <a href="{{external_urls.spotify}}" class="thumbnail">
+                        <img src="{{images.1.url}}" alt="{{artists.0.name}} - {{name}}" />
+                      </a>
+                    </div>
+                    <div class="cell small-8">
+                      <table class="hover">
+                        <tbody>
+                          {{#each tracks}}
+                            <tr>
+                              <td>{{track_number}}</td>
+                              <td>{{name}}</td>
+                              <td>{{duration duration_ms}}</td>
+                            </tr>
+                          {{/each}}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  <div class="grid-x grid-padding-x">
+                    <div class="cell small-12">
+                      <button
+                        class="success button remove-from-playlist"
+                        data-id="{{id}}"
+                        {{#if ../../running}}disabled{{/if}}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                {{/each}}
+
+                <button class="close-button" aria-label="Close" type="button" data-close>
+                  <span aria-hidden="true">&or;</span>
+                </button>
+              </div>
+            </div>
+
+          </div>
+
+          <br />
+        {{/each}}
+      </div>
+      <div class="tabs-panel" id="bandcamp">
+        {{#each log.bandcampEntries}}
+          <div class="grid-x grid-padding-x">
+
+            <div class="cell small-12">
+              <div class="callout secondary" data-closable>
+                <div class="grid-x grid-padding-x">
+                  <div class="cell small-11">
+                    <h4><a href="{{artistUrl}}">{{artist}}</a></h4>
+                  </div>
+                </div>
+                <div class="grid-x grid-padding-x">
+                  <div class="cell small-11">
+                    <h5>{{genre}}</h5>
+                  </div>
+                </div>
+                <div class="grid-x grid-padding-x">
+                  <div class="cell small-12">
+                    <h5><a href="{{albumUrl}}">{{album}}</a></h5>
+                  </div>
+                </div>
+
+                <div class="grid-x grid-padding-x">
+                  <div class="cell small-12">
+                    <h6>Bandcamp</h6>
+                  </div>
+                </div>
+                <div class="grid-x grid-padding-x">
+                  {{#each bandcampHits}}
+                    <div class="cell small-2">
+                      <a href="{{url}}" class="thumbnail">
+                        <img src="{{imageUrl}}" alt="{{artist}} - {{name}}" />
+                      </a>
+                    </div>
+                  {{/each}}
+                </div>
+
+                <button class="close-button" aria-label="Close" type="button" data-close>
+                  <span aria-hidden="true">&or;</span>
+                </button>
+              </div>
+            </div>
+
+          </div>
+
+          <br />
+        {{/each}}
+      </div>
     </div>
-
-    <br />
-  {{/each}}
+  {{/unless}}
 </div>
