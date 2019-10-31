@@ -120,7 +120,7 @@ module.exports = {
 
       bandcampTotal += bandcampHits.length;
 
-      if (entry.bandcamp) {
+      if (entry.bandcamp && !entry.spotify) {
         bandcampEntries.push(entry);
       }
 

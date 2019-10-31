@@ -106,7 +106,7 @@ app.get('/:key?', async (req, res) => {
   }
 
   const buildKey = await redis.get(`build-key:${fingerprint}`);
-  playlists = playlists.items.map(list => {
+  playlists = playlists.map(list => {
     list.selected = log && list.id === log.playlist;
     return list;
   });
