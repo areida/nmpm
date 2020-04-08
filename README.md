@@ -8,13 +8,13 @@
 ## Setup
 1. Create a new application at https://developer.spotify.com/dashboard/applications
 1. Get the Client ID and Client Secret
-1. Add `https://localhost/authorize` to your application's Redirect URIs
+1. Add `https://localhost:88/authorize` to your application's Redirect URIs
 
 ## Installation
 1. Rename `example.env` to `.env`
 1. Set the `SPOTIFY_CLIENT_ID` and `SPOTIFY_CLIENT_SECRET` values in `.env`
 1. Run `docker-compose up`
-1. Visit http://localhost
+1. Visit http://localhost:88
 1. Authorize the app
 
 ## Use

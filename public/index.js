@@ -54,7 +54,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     await postForm(data);
 
-    document.location = 'http://localhost/' + data.key;
+    document.location = 'http://localhost:88/' + data.key;
   };
 
   document.querySelectorAll('.remove-from-playlist').forEach(removeButton => {
