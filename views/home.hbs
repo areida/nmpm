@@ -154,6 +154,14 @@
         {{#each log.entries}}
           <div class="grid-x grid-padding-x">
 
+            {{#if date}}
+              <div class="cell small-12">
+                <div class="callout secondary">
+                  <h6>{{date}}</h6>
+                </div>
+              </div>
+            {{/if}}
+
             <div class="cell small-12">
               <div class="callout secondary" data-closable>
                 <div class="grid-x grid-padding-x">
@@ -238,8 +246,6 @@
             </div>
 
           </div>
-
-          <br />
         {{/each}}
       </div>
       <div class="tabs-panel" id="spotify">
@@ -311,8 +317,6 @@
             </div>
 
           </div>
-
-          <br />
         {{/each}}
       </div>
       <div class="tabs-panel" id="bandcamp">
@@ -359,8 +363,6 @@
             </div>
 
           </div>
-
-          <br />
         {{/each}}
       </div>
     </div>

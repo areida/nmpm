@@ -5,6 +5,7 @@ const moment = require('moment-timezone');
 const uuid = require('uuid');
 const bodyParser = require('body-parser');
 
+const queue = require('./lib/queue');
 const redis = require('./lib/redis');
 const SpotifyApiClient = require('./lib/spotify-api-client');
 const playlistService = require('./src/playlist/playlist-service');
@@ -166,7 +167,7 @@ app.post('/playlist', async (req, res) => {
     spotifyTotal: 0,
   });
 
-  playlistService.execute({
+  const job = queue.create('playlist', {
     auth,
     dates,
     fingerprint,
@@ -174,9 +175,35 @@ app.post('/playlist', async (req, res) => {
     ignore,
     key,
     playlist: playlist.id,
+  }).save();
+
+  job.on('complete', () => console.log('Playlist job complete'));
+  job.on('failed attempt', async () => {
+    console.log('Playlist job failed');
+    await redis.del(`build-key:${fingerprint}`);
   });
+  job.on('failed', async () => {
+    console.log('Playlist job failed');
+    await redis.del(`build-key:${fingerprint}`);
+  });
+  job.on('progress', (progress, { album }) => console.log(`${progress}%: ${album}`));
 
   return res.sendStatus(200);
+});
+
+queue.process('playlist', 5, async (job, done) => {
+  await playlistService.execute({
+    auth: job.data.auth,
+    dates: job.data.dates,
+    fingerprint: job.data.fingerprint,
+    genre: job.data.genre,
+    ignore: job.data.ignore,
+    key: job.data.key,
+    job,
+    playlist: job.data.playlist,
+  });
+
+  done();
 });
 
 app.listen(PORT, () => {

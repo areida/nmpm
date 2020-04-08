@@ -30,7 +30,7 @@ module.exports = {
   },
 
   async execute(options) {
-    const { auth, dates, fingerprint, genre, ignore, key, playlist } = options;
+    const { auth, dates, fingerprint, genre, ignore, job, key, playlist } = options;
 
     await redis.set(`build-key:${fingerprint}`, key);
 
@@ -57,12 +57,15 @@ module.exports = {
     const entries = [];
     const spotifyEntries = [];
     const bandcampEntries = [];
+    let lastDate = null;
 
     // Look up albums on spotify and add to playlist if found
     for (let i = 0; i < albums.length; ++i) {
-      const { album, albumUrl, artist, artistUrl } = albums[i];
+      const { album, albumUrl, artist, artistUrl, date } = albums[i];
 
       if (ignore && ignore.indexOf(artist) !== -1) continue;
+
+      job.log(`${artist} - ${album}`);
 
       let entry = {
         album: album,
@@ -71,6 +74,7 @@ module.exports = {
         artistUrl: artistUrl,
         bandcamp: false,
         bandcampHits: [],
+        date: lastDate !== date && date,
         genre: albums[i].genre,
         spotify: false,
         spotifyHits: [],
@@ -125,6 +129,10 @@ module.exports = {
       }
 
       entries.push(entry);
+
+      job.progress(i, albums.length, { album: `${artist} - ${album}` });
+
+      lastDate = date;
 
       await redis.hset(`build:${fingerprint}:${key}`, 'entries', JSON.stringify(entries));
       await redis.hset(`build:${fingerprint}:${key}`, 'spotifyEntries', JSON.stringify(spotifyEntries));
