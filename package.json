@@ -24,7 +24,7 @@
     "ioredis": "^4.0.0",
     "kue": "^0.11.6",
     "log-symbols": "^2.2.0",
-    "moment-timezone": "^0.5.25",
+    "moment-timezone": "^0.5.35",
     "nodemon": "^1.18.4",
     "query-string": "^6.1.0",
     "request": "^2.88.0",
